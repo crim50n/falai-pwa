@@ -525,6 +525,13 @@ class FalAI {
             }
         }
 
+        const actionsContainer = this.createGenerationButtons();
+        if (mainFields.children.length > 0) {
+            mainFields.appendChild(actionsContainer);
+        } else {
+            container.appendChild(actionsContainer);
+        }
+
         // Ensure advanced options are visible if they contain required fields that are empty
         // or if the user has previously expanded them
         const savedAdvancedVisible = localStorage.getItem('falai_advanced_visible') === 'true';
@@ -545,6 +552,33 @@ class FalAI {
         container.appendChild(advancedContainer);
     }
 
+    createGenerationButtons() {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'prompt-buttons';
+
+        const resetBtn = document.createElement('button');
+        resetBtn.type = 'button';
+        resetBtn.id = 'reset-btn';
+        resetBtn.className = 'btn secondary';
+        resetBtn.textContent = 'Reset';
+        resetBtn.addEventListener('click', () => {
+            this.resetFormToDefaults();
+        });
+
+        const generateBtn = document.createElement('button');
+        generateBtn.type = 'submit';
+        generateBtn.className = 'btn primary generate-btn';
+        generateBtn.innerHTML = `
+            <span class="generate-text">Generate</span>
+            <span class="generate-loading hidden">Generating...</span>
+        `;
+
+        buttonContainer.appendChild(resetBtn);
+        buttonContainer.appendChild(generateBtn);
+
+        return buttonContainer;
+    }
+
     createFormField(name, schema, required = false) {
         const field = document.createElement('div');
         field.className = 'form-field';
@@ -555,15 +589,14 @@ class FalAI {
 
         let input;
 
-        // Handle anyOf schemas (like image_size)
+        // Handle anyOf schemas, preferring enum options or the first non-null variant.
         if (schema.anyOf && schema.anyOf.length > 0) {
-            // Find the enum option in anyOf
             const enumSchema = schema.anyOf.find(option => option.enum);
             if (enumSchema) {
                 schema = { ...schema, enum: enumSchema.enum };
             } else {
-                // Use first option if no enum found
-                schema = { ...schema, ...schema.anyOf[0] };
+                const firstConcreteOption = schema.anyOf.find(option => option.type !== 'null') || schema.anyOf[0];
+                schema = { ...schema, ...firstConcreteOption };
             }
         }
 
@@ -606,6 +639,7 @@ class FalAI {
             input.type = 'number';
             if (schema.minimum !== undefined) input.min = schema.minimum;
             if (schema.maximum !== undefined) input.max = schema.maximum;
+            if (schema.multipleOf !== undefined) input.step = schema.multipleOf;
             if (schema.default !== undefined) input.value = schema.default;
         } else if (schema.description && schema.description.length > 100) {
             input = document.createElement('textarea');
@@ -676,31 +710,6 @@ class FalAI {
             desc.textContent = schema.description;
             field.appendChild(desc);
         }
-
-        // Add generation buttons after prompt
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'prompt-buttons';
-
-        const resetBtn = document.createElement('button');
-        resetBtn.type = 'button';
-        resetBtn.id = 'reset-btn';
-        resetBtn.className = 'btn secondary';
-        resetBtn.textContent = 'Reset';
-        resetBtn.addEventListener('click', () => {
-            this.resetFormToDefaults();
-        });
-
-        const generateBtn = document.createElement('button');
-        generateBtn.type = 'submit';
-        generateBtn.className = 'btn primary generate-btn';
-        generateBtn.innerHTML = `
-            <span class="generate-text">Generate</span>
-            <span class="generate-loading hidden">Generating...</span>
-        `;
-
-        buttonContainer.appendChild(resetBtn);
-        buttonContainer.appendChild(generateBtn);
-        field.appendChild(buttonContainer);
 
         return field;
     }
@@ -1126,7 +1135,7 @@ class FalAI {
         slider.min = schema.minimum;
         slider.max = schema.maximum;
         slider.value = schema.default || schema.minimum;
-        slider.step = schema.type === 'integer' ? 1 : 0.1;
+        slider.step = schema.multipleOf || (schema.type === 'integer' ? 1 : 0.1);
 
         const valueInput = document.createElement('input');
         valueInput.type = 'number';
@@ -1135,7 +1144,7 @@ class FalAI {
         valueInput.value = slider.value;
         valueInput.min = schema.minimum;
         valueInput.max = schema.maximum;
-        valueInput.step = schema.type === 'integer' ? 1 : 0.01; // More precise step for manual input
+        valueInput.step = schema.multipleOf || (schema.type === 'integer' ? 1 : 0.01); // More precise step for manual input
 
         const sliderLabels = document.createElement('div');
         sliderLabels.className = 'slider-labels';
@@ -2098,7 +2107,7 @@ sendSystemNotification(title, body, type = 'info') {
             const queueResponse = await this.submitToQueue(formData);
 
             // Check if response already contains results (synchronous response)
-            if (queueResponse.images) {
+            if (queueResponse.images || queueResponse.image || queueResponse.video || queueResponse.output || queueResponse.text || queueResponse.outputs) {
                 // Direct response with results
                 this.displayResults(queueResponse);
                 this.hideGenerationStatus();
@@ -2617,11 +2626,15 @@ sendSystemNotification(title, body, type = 'info') {
         // Send notification if backgrounded
         this.sendSystemNotification('Generation Complete', 'Your image is ready!', 'success');
 
+        const imageResults = Array.isArray(result.images)
+            ? result.images
+            : (result.image && result.image.url ? [result.image] : []);
+
         // Handle different result types: images, video, or text
-        if (result.images && result.images.length > 0) {
+        if (imageResults.length > 0) {
             // Image generation results
             const added = [];
-            for (const image of result.images) {
+            for (const image of imageResults) {
                 const imageElement = this.createImageElement(image, result);
                 container.appendChild(imageElement);
                 // Auto-save silently (dedupe) so gallery always has generations
