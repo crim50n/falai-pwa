@@ -631,6 +631,9 @@ class FalAI {
             }
 
             input = document.createElement('select');
+            if (schema.type) {
+                input.dataset.schemaType = schema.type;
+            }
             input.innerHTML = '<option value="">Select...</option>';
             for (const option of schema.enum) {
                 const opt = document.createElement('option');
@@ -2411,6 +2414,19 @@ sendSystemNotification(title, body, type = 'info') {
 
             const selectedOption = input.selectedOptions?.[0];
             const valueType = selectedOption?.dataset?.valueType;
+            const schemaType = input.dataset.schemaType;
+
+            if (schemaType === 'integer') {
+                return parseInt(value, 10);
+            }
+
+            if (schemaType === 'number') {
+                return parseFloat(value);
+            }
+
+            if (schemaType === 'boolean') {
+                return value === 'true';
+            }
 
             if (valueType === 'number') {
                 return parseFloat(value);
