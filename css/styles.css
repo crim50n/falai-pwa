@@ -482,7 +482,7 @@ body {
     border-bottom: 1px solid #e2e8f0;
 }
 
-.mobile-gallery-content .gallery-item img {
+.mobile-gallery-content .gallery-item .gallery-media {
     height: 120px;
 }
 
@@ -3059,7 +3059,7 @@ textarea:focus-visible {
     border-color: var(--border);
 }
 
-[data-theme="dark"] .gallery-item img {
+[data-theme="dark"] .gallery-item .gallery-media {
     background: var(--surface);
 }
 

@@ -460,11 +460,72 @@ class FalAIGallery {
     }
 
     getImageExtension(url) {
+        if (this.isVideoItem({ url, type: this.getMediaTypeFromUrl(url) })) {
+            return 'mp4';
+        }
+
         if (url.startsWith('data:image/')) {
             const mimeType = url.split(';')[0].split(':')[1];
             return mimeType.split('/')[1];
         }
         return 'png';
+    }
+
+    getMediaTypeFromUrl(url = '') {
+        if (url.startsWith('data:video/')) return 'video';
+        if (url.startsWith('data:image/')) return 'image';
+
+        try {
+            const normalizedUrl = new URL(url, window.location.href);
+            const path = normalizedUrl.pathname.toLowerCase();
+            if (path.endsWith('.mp4') || path.endsWith('.webm') || path.endsWith('.mov')) {
+                return 'video';
+            }
+        } catch (e) {
+            const normalized = url.split('?')[0].toLowerCase();
+            if (normalized.endsWith('.mp4') || normalized.endsWith('.webm') || normalized.endsWith('.mov')) {
+                return 'video';
+            }
+        }
+
+        return 'image';
+    }
+
+    isVideoItem(imageData = {}) {
+        return imageData.type === 'video' || this.getMediaTypeFromUrl(imageData.url) === 'video';
+    }
+
+    createGalleryMediaElement(imageData, altText) {
+        if (this.isVideoItem(imageData)) {
+            const video = document.createElement('video');
+            video.src = imageData.url;
+            video.className = 'gallery-media gallery-video';
+            video.muted = true;
+            video.playsInline = true;
+            video.preload = 'metadata';
+            video.loop = true;
+
+            video.addEventListener('mouseenter', () => {
+                const playPromise = video.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(() => { });
+                }
+            });
+
+            video.addEventListener('mouseleave', () => {
+                video.pause();
+                video.currentTime = 0;
+            });
+
+            return video;
+        }
+
+        const img = document.createElement('img');
+        img.src = imageData.url;
+        img.alt = altText;
+        img.loading = 'lazy';
+        img.className = 'gallery-media';
+        return img;
     }
 
     addContextMenuEvents(element, imageData) {
@@ -633,18 +694,21 @@ class FalAIGallery {
         // Anchor for PhotoSwipe
         const link = document.createElement('a');
         link.href = imageData.url;
-        link.className = 'pswp-item';
+        link.className = this.isVideoItem(imageData) ? 'gallery-item-link' : 'pswp-item gallery-item-link';
         link.dataset.endpoint = imageData.endpoint || '';
         link.dataset.prompt = imageData.prompt || '';
         link.dataset.seed = imageData.seed || '';
         link.dataset.meta = JSON.stringify(imageData.parameters || {});
         link.dataset.imageId = imageData.timestamp;
-        this._assignNaturalSize(link, imageData.url);
+        if (this.isVideoItem(imageData)) {
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.dataset.mediaType = 'video';
+        } else {
+            this._assignNaturalSize(link, imageData.url);
+        }
 
-        const img = document.createElement('img');
-        img.src = imageData.url;
-        img.alt = 'Saved image';
-        img.loading = 'lazy';
+        const media = this.createGalleryMediaElement(imageData, 'Saved image');
 
         const info = document.createElement('div');
         info.className = 'gallery-item-info';
@@ -673,7 +737,7 @@ class FalAIGallery {
         // Add context menu event handlers
         this.addContextMenuEvents(div, imageData);
 
-        link.appendChild(img);
+        link.appendChild(media);
         div.appendChild(selectionOverlay);
         div.appendChild(link);
         div.appendChild(info);
@@ -810,18 +874,21 @@ class FalAIGallery {
 
         const link = document.createElement('a');
         link.href = imageData.url;
-        link.className = 'pswp-item';
+        link.className = this.isVideoItem(imageData) ? 'gallery-item-link' : 'pswp-item gallery-item-link';
         link.dataset.endpoint = imageData.endpoint || '';
         link.dataset.prompt = imageData.prompt || '';
         link.dataset.seed = imageData.seed || '';
         link.dataset.meta = JSON.stringify(imageData.parameters || {});
         link.dataset.imageId = imageData.timestamp;
-        this._assignNaturalSize(link, imageData.url);
+        if (this.isVideoItem(imageData)) {
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.dataset.mediaType = 'video';
+        } else {
+            this._assignNaturalSize(link, imageData.url);
+        }
 
-        const img = document.createElement('img');
-        img.src = imageData.url;
-        img.alt = 'Saved image';
-        img.loading = 'lazy';
+        const media = this.createGalleryMediaElement(imageData, 'Saved image');
 
         // Add selection event listeners
         const checkbox = selectionOverlay.querySelector('input[type="checkbox"]');
@@ -843,7 +910,7 @@ class FalAIGallery {
         // Add context menu event handlers
         this.addContextMenuEvents(div, imageData);
 
-        link.appendChild(img);
+        link.appendChild(media);
         div.appendChild(selectionOverlay);
         div.appendChild(link);
 
