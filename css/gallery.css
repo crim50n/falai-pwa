@@ -293,10 +293,17 @@
     border-color: rgba(59, 130, 246, 0.2);
 }
 
+.gallery-item .gallery-item-link {
+    display: block;
+    line-height: 0;
+}
+
 .gallery-item .gallery-media {
+    display: block;
     width: 100%;
     height: 160px;
     object-fit: cover;
+    object-position: center;
     position: relative;
     z-index: 1;
     cursor: pointer;
