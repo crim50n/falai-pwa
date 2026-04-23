@@ -132,6 +132,17 @@
                     </div>
                 </div>
 
+                <div class="upload-settings">
+                    <h3>Upload Settings</h3>
+                    <label class="upload-settings-toggle">
+                        <input type="checkbox" id="auto-compress-checkbox"> Auto-compress uploads
+                    </label>
+                    <label class="upload-settings-field" for="auto-compress-max-dimension">
+                        <span>Auto-compress max dimension</span>
+                        <input type="number" id="auto-compress-max-dimension" min="256" step="64" value="1024">
+                    </label>
+                </div>
+
                 <div id="endpoint-info" class="endpoint-info hidden">
                     <div class="endpoint-header">
                         <img id="endpoint-thumbnail" class="endpoint-thumbnail" src="" alt="">
@@ -233,13 +244,6 @@
         <div class="debug-toggle">
             <label>
                 <input type="checkbox" id="debug-checkbox"> Debug Mode
-            </label>
-            <label>
-                <input type="checkbox" id="auto-compress-checkbox"> Auto-compress uploads
-            </label>
-            <label class="debug-toggle-field" for="auto-compress-max-dimension">
-                <span>Auto-compress max dimension</span>
-                <input type="number" id="auto-compress-max-dimension" min="256" step="64" value="1024">
             </label>
         </div>
 
