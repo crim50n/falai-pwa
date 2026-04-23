@@ -1293,6 +1293,18 @@ class FalAI {
             document.getElementById('api-key-modal').classList.add('hidden');
         });
 
+        const openUploadSettingsModal = () => {
+            document.getElementById('upload-settings-modal').classList.remove('hidden');
+        };
+
+        document.getElementById('upload-settings-btn').addEventListener('click', () => {
+            openUploadSettingsModal();
+        });
+
+        document.getElementById('close-upload-settings').addEventListener('click', () => {
+            document.getElementById('upload-settings-modal').classList.add('hidden');
+        });
+
 
         // Panel tabs are now handled by the gallery class
 
@@ -1509,6 +1521,11 @@ class FalAI {
         document.getElementById('mobile-api-key-btn').addEventListener('click', () => {
             this.closeMobileMenu();
             document.getElementById('api-key-btn').click();
+        });
+
+        document.getElementById('mobile-upload-settings-btn').addEventListener('click', () => {
+            this.closeMobileMenu();
+            openUploadSettingsModal();
         });
 
         document.getElementById('mobile-add-endpoint-btn').addEventListener('click', () => {

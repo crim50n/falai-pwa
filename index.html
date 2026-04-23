@@ -44,6 +44,7 @@
             </div>
             <div class="header-controls">
                 <button id="add-endpoint-btn" class="btn secondary" title="Add Custom Endpoint"><i class="ph ph-plus"></i></button>
+                <button id="upload-settings-btn" class="btn secondary" title="Upload Settings"><i class="ph ph-arrows-in-cardinal"></i></button>
                 <button id="export-settings-btn" class="btn secondary" title="Export Settings"><i class="ph ph-export"></i></button>
                 <button id="import-settings-btn" class="btn secondary" title="Import Settings"><i class="ph ph-download-simple"></i></button>
                 <button id="reset-settings-btn" class="btn secondary" title="Reset Settings"><i class="ph ph-arrow-counter-clockwise"></i></button>
@@ -73,6 +74,7 @@
                     <h3 class="section-header">Settings <span class="toggle-icon"><i class="ph ph-caret-down"></i></span></h3>
                     <div class="section-content">
                         <button id="mobile-api-key-btn" class="mobile-menu-btn">Set API Key</button>
+                        <button id="mobile-upload-settings-btn" class="mobile-menu-btn">Upload Settings</button>
                         <button id="mobile-add-endpoint-btn" class="mobile-menu-btn">Add Custom Endpoint</button>
                         <button id="mobile-export-settings-btn" class="mobile-menu-btn">Export Settings</button>
                         <button id="mobile-import-settings-btn" class="mobile-menu-btn">Import Settings</button>
@@ -130,17 +132,6 @@
                             <option value="">Choose an endpoint...</option>
                         </select>
                     </div>
-                </div>
-
-                <div class="upload-settings">
-                    <h3>Upload Settings</h3>
-                    <label class="upload-settings-toggle">
-                        <input type="checkbox" id="auto-compress-checkbox"> Auto-compress uploads
-                    </label>
-                    <label class="upload-settings-field" for="auto-compress-max-dimension">
-                        <span>Auto-compress max dimension</span>
-                        <input type="number" id="auto-compress-max-dimension" min="256" step="64" value="1024">
-                    </label>
                 </div>
 
                 <div id="endpoint-info" class="endpoint-info hidden">
@@ -255,6 +246,25 @@
                 <div class="modal-actions">
                     <button id="save-api-key" class="btn primary">Save</button>
                     <button id="cancel-api-key" class="btn secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Settings Modal -->
+        <div id="upload-settings-modal" class="modal hidden">
+            <div class="modal-content">
+                <h3>Upload Settings</h3>
+                <div class="upload-settings-modal-body">
+                    <label class="upload-settings-toggle">
+                        <input type="checkbox" id="auto-compress-checkbox"> Auto-compress uploads
+                    </label>
+                    <label class="upload-settings-field" for="auto-compress-max-dimension">
+                        <span>Auto-compress max dimension</span>
+                        <input type="number" id="auto-compress-max-dimension" min="256" step="64" value="1024">
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button id="close-upload-settings" class="btn primary">Done</button>
                 </div>
             </div>
         </div>
