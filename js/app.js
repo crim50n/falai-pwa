@@ -23,6 +23,8 @@ class FalAI {
         }
 
         this.debugMode = (localStorage.getItem('falai_debug_mode') || sessionStorage.getItem('falai_debug_mode')) === 'true';
+        this.autoCompressUploads = localStorage.getItem('falai_auto_compress_uploads') === 'true';
+        this.autoCompressMaxDimension = parseInt(localStorage.getItem('falai_auto_compress_max_dimension') || '1024', 10);
 
         if (this.debugMode) {
             console.log('🔧 Initialized with settings:', this.endpointSettings);
@@ -187,12 +189,22 @@ class FalAI {
 
     initDebugMode() {
         const debugCheckbox = document.getElementById('debug-checkbox');
+        const autoCompressCheckbox = document.getElementById('auto-compress-checkbox');
+        const autoCompressMaxDimensionInput = document.getElementById('auto-compress-max-dimension');
 
         // Restore debug mode state
         debugCheckbox.checked = this.debugMode;
+        autoCompressCheckbox.checked = this.autoCompressUploads;
+        autoCompressMaxDimensionInput.value = this.autoCompressMaxDimension;
         if (this.debugMode) {
             this.logDebug('Debug mode restored', 'system');
         }
+    }
+
+    getAutoCompressMaxDimension() {
+        const value = Number(this.autoCompressMaxDimension);
+        if (!Number.isFinite(value)) return 1024;
+        return Math.max(256, Math.round(value));
     }
 
     initTheme() {
@@ -1339,6 +1351,24 @@ class FalAI {
             }
         });
 
+        document.getElementById('auto-compress-checkbox').addEventListener('change', (e) => {
+            this.autoCompressUploads = e.target.checked;
+            localStorage.setItem('falai_auto_compress_uploads', this.autoCompressUploads);
+
+            this.showToast(
+                'Upload Compression',
+                this.autoCompressUploads ? 'Automatic fallback upload compression enabled' : 'Automatic fallback upload compression disabled',
+                'info'
+            );
+        });
+
+        document.getElementById('auto-compress-max-dimension').addEventListener('change', (e) => {
+            const parsed = parseInt(e.target.value, 10);
+            this.autoCompressMaxDimension = Number.isFinite(parsed) ? Math.max(256, parsed) : 1024;
+            e.target.value = this.autoCompressMaxDimension;
+            localStorage.setItem('falai_auto_compress_max_dimension', String(this.autoCompressMaxDimension));
+        });
+
         // Settings import/export
         document.getElementById('export-settings-btn').addEventListener('click', () => {
             this.exportSettings();
@@ -1688,8 +1718,15 @@ class FalAI {
         const targetSize = this.getTargetImageSize();
 
         // If no target size specified, apply fallback size limit
-        let finalTargetSize = targetSize;
         if (!targetSize) {
+            if (!this.autoCompressUploads) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+            }
+
             // Load image to check its size
             return new Promise((resolve) => {
                 const img = new Image();
@@ -1698,7 +1735,7 @@ class FalAI {
                     const originalHeight = img.naturalHeight;
 
                     // Apply fallback limit to prevent 413 errors
-                    const maxDimension = 1024;
+                    const maxDimension = this.getAutoCompressMaxDimension();
                     if (originalWidth > maxDimension || originalHeight > maxDimension) {
                         const resizeScale = maxDimension / Math.max(originalWidth, originalHeight);
                         const targetWidth = Math.round(originalWidth * resizeScale);
@@ -3284,6 +3321,8 @@ sendSystemNotification(title, body, type = 'info') {
                 savedImages: this.gallery.savedImages,
                 likedImages: likedImages,
                 debugMode: this.debugMode,
+                autoCompressUploads: this.autoCompressUploads,
+                autoCompressMaxDimension: this.autoCompressMaxDimension,
                 advancedVisible: localStorage.getItem('falai_advanced_visible') === 'true',
                 customEndpoints: customEndpoints,
                 loraComments: loraComments,
@@ -3391,6 +3430,18 @@ sendSystemNotification(title, body, type = 'info') {
                 }
             }
 
+            if (settings.autoCompressUploads !== undefined) {
+                this.autoCompressUploads = settings.autoCompressUploads;
+                localStorage.setItem('falai_auto_compress_uploads', this.autoCompressUploads);
+                document.getElementById('auto-compress-checkbox').checked = this.autoCompressUploads;
+            }
+
+            if (settings.autoCompressMaxDimension !== undefined) {
+                this.autoCompressMaxDimension = Math.max(256, parseInt(settings.autoCompressMaxDimension, 10) || 1024);
+                localStorage.setItem('falai_auto_compress_max_dimension', String(this.autoCompressMaxDimension));
+                document.getElementById('auto-compress-max-dimension').value = this.autoCompressMaxDimension;
+            }
+
             if (settings.advancedVisible !== undefined) {
                 localStorage.setItem('falai_advanced_visible', settings.advancedVisible);
             }
@@ -3439,6 +3490,20 @@ sendSystemNotification(title, body, type = 'info') {
 
             // Regenerate form to apply defaults
             this.generateForm();
+
+            this.autoCompressUploads = false;
+            localStorage.setItem('falai_auto_compress_uploads', 'false');
+            const autoCompressCheckbox = document.getElementById('auto-compress-checkbox');
+            if (autoCompressCheckbox) {
+                autoCompressCheckbox.checked = false;
+            }
+
+            this.autoCompressMaxDimension = 1024;
+            localStorage.setItem('falai_auto_compress_max_dimension', '1024');
+            const autoCompressMaxDimensionInput = document.getElementById('auto-compress-max-dimension');
+            if (autoCompressMaxDimensionInput) {
+                autoCompressMaxDimensionInput.value = '1024';
+            }
 
             this.showToast('Success', 'Settings reset to defaults', 'success');
             this.logDebug(`Settings reset for endpoint: ${endpointId}`, 'info');
