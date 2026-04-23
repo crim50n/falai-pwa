@@ -622,8 +622,9 @@ class FalAI {
             input.innerHTML = '<option value="">Select...</option>';
             for (const option of schema.enum) {
                 const opt = document.createElement('option');
-                opt.value = option;
+                opt.value = String(option);
                 opt.textContent = option;
+                opt.dataset.valueType = typeof option;
                 input.appendChild(opt);
             }
         } else if (schema.type === 'boolean') {
@@ -2197,6 +2198,11 @@ sendSystemNotification(title, body, type = 'info') {
                 if (value !== '') {
                     data[key] = parseFloat(value);
                 }
+            } else if (input.tagName === 'SELECT') {
+                const value = this.getInputValue(input);
+                if (value !== undefined) {
+                    data[key] = value;
+                }
             } else if (input.value !== '') {
                 data[key] = input.value;
             }
@@ -2362,6 +2368,22 @@ sendSystemNotification(title, body, type = 'info') {
         } else if (input.type === 'number' || input.type === 'range') {
             const value = input.value;
             return value !== '' ? parseFloat(value) : undefined;
+        } else if (input.tagName === 'SELECT') {
+            const value = input.value;
+            if (value === '') return undefined;
+
+            const selectedOption = input.selectedOptions?.[0];
+            const valueType = selectedOption?.dataset?.valueType;
+
+            if (valueType === 'number') {
+                return parseFloat(value);
+            }
+
+            if (valueType === 'boolean') {
+                return value === 'true';
+            }
+
+            return value;
         } else {
             return input.value !== '' ? input.value : undefined;
         }
