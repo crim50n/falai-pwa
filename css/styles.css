@@ -3085,6 +3085,15 @@ textarea:focus-visible {
     color: var(--text-main);
 }
 
+[data-theme="dark"] .file-info {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-theme="dark"] .file-info span {
+    color: var(--text-main);
+}
+
 [data-theme="dark"] .gallery-item {
     background: var(--surface);
     border-color: var(--border);
@@ -3147,6 +3156,11 @@ textarea:focus-visible {
 
 [data-theme="dark"] .upload-content small {
     color: var(--text-muted);
+}
+
+[data-theme="dark"] .image-preview {
+    background: #1f2937;
+    border-color: #374151;
 }
 
 /* Dark mode modal input fixes */
